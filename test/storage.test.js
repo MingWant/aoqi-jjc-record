@@ -211,6 +211,47 @@ test("player and union labels remain stable when game names change", () => {
   }
 });
 
+test("a manually created player without a union gains the collected union by player ID", () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  const arena = config.arenas.find((item) => item.key === "classic");
+
+  try {
+    const created = storage.createPlayerProfile({
+      playerId: "manual-no-union",
+      nickname: "手动昵称",
+      playerLabel: "固定玩家标注"
+    });
+    assert.equal(created.latestUnionId, 0);
+    assert.equal(created.latestUnionName, null);
+
+    storage.saveSnapshot({
+      arena,
+      capturedAt: new Date(Date.now() + 60_000),
+      zones: [{
+        ...arena.zones[0],
+        players: [{
+          rank: 1,
+          playerId: "manual-no-union",
+          nickname: "采集昵称",
+          unionId: 8123,
+          unionName: "采集联盟"
+        }]
+      }],
+      source: "test"
+    });
+
+    const updated = storage.getPlayerProfile("manual-no-union");
+    assert.equal(updated.playerLabel, "固定玩家标注");
+    assert.equal(updated.latestNickname, "采集昵称");
+    assert.equal(updated.latestUnionId, 8123);
+    assert.equal(updated.latestUnionName, "采集联盟");
+    assert.equal(updated.unionLabel, "采集联盟");
+  } finally {
+    storage.close();
+  }
+});
+
 test("creating a season with planned weeks calculates and persists its end", () => {
   const config = loadConfig({ dataFile: ":memory:" });
   const storage = new Storage(config);

@@ -698,17 +698,40 @@ function renderPlayerArchiveMatrix(stats, rows) {
 function renderPlayers() {
   const stats = arenaData().stats;
   const archiveRows = playerArchiveRows(stats);
+  const filtered = filterPlayerArchiveRows(archiveRows);
+  const maintenance = adminUnlocked() ? renderNewPlayerForm() : renderAdminLockNotice("档案维护");
+  $("#players-content").innerHTML = `<div class="section-header"><div><h2>${escapeHtml(currentArena().name)} · 玩家档案</h2><p id="player-search-summary">${playerSearchSummary(filtered.length)}</p></div></div>${maintenance}<div class="search-row"><input class="text-input" id="player-search" type="search" value="${escapeHtml(state.playerQuery)}" placeholder="搜索标注、游戏昵称或玩家 ID" aria-label="搜索玩家"><span class="status-badge">${number(archiveRows.length)} 位档案</span></div><div id="player-search-results">${renderPlayerSearchResults(stats, archiveRows, filtered)}</div>`;
+}
+
+function filterPlayerArchiveRows(archiveRows) {
   const query = state.playerQuery.trim().toLowerCase();
   const contains = (value) => String(value ?? "").toLowerCase().includes(query);
-  const filtered = archiveRows.filter((player) => !query
+  return archiveRows.filter((player) => !query
     || contains(player.nickname)
     || contains(player.playerLabel)
     || contains(player.playerId)
     || contains(player.unionName)
     || contains(player.unionLabel));
+}
+
+function playerSearchSummary(filteredCount) {
+  return `共 ${number(filteredCount)} 位匹配玩家 · 勾选列显示每周战皇记录`;
+}
+
+function renderPlayerSearchResults(stats, archiveRows, filtered) {
   const visibleRows = filtered.slice(0, 500);
-  const maintenance = adminUnlocked() ? renderNewPlayerForm() : renderAdminLockNotice("档案维护");
-  $("#players-content").innerHTML = `<div class="section-header"><div><h2>${escapeHtml(currentArena().name)} · 玩家档案</h2><p>共 ${number(filtered.length)} 位匹配玩家 · 勾选列显示每周战皇记录</p></div></div>${maintenance}<div class="search-row"><input class="text-input" id="player-search" type="search" value="${escapeHtml(state.playerQuery)}" placeholder="搜索标注、游戏昵称或玩家 ID" aria-label="搜索玩家"><span class="status-badge">${number(archiveRows.length)} 位档案</span></div>${renderUnionArchiveLabels(filtered, archiveRows)}${renderPlayerArchiveMatrix(stats, visibleRows)}<div id="player-detail-slot" class="player-detail">${state.playerDetail ? renderPlayerDetail(state.playerDetail) : ""}</div>`;
+  return `${renderUnionArchiveLabels(filtered, archiveRows)}${renderPlayerArchiveMatrix(stats, visibleRows)}<div id="player-detail-slot" class="player-detail">${state.playerDetail ? renderPlayerDetail(state.playerDetail) : ""}</div>`;
+}
+
+function updatePlayerSearch(input) {
+  state.playerQuery = input.value;
+  const stats = arenaData().stats;
+  const archiveRows = playerArchiveRows(stats);
+  const filtered = filterPlayerArchiveRows(archiveRows);
+  const summary = $("#player-search-summary");
+  const results = $("#player-search-results");
+  if (summary) summary.textContent = playerSearchSummary(filtered.length);
+  if (results) results.innerHTML = renderPlayerSearchResults(stats, archiveRows, filtered);
 }
 
 function renderPlayerDetail(detail) {
@@ -1455,12 +1478,12 @@ document.addEventListener("input", (event) => {
     return;
   }
   if (event.target.id === "player-search") {
-    state.playerQuery = event.target.value;
-    renderPlayers();
-    const input = $("#player-search");
-    input?.focus();
-    input?.setSelectionRange(state.playerQuery.length, state.playerQuery.length);
+    if (!event.isComposing) updatePlayerSearch(event.target);
   }
+});
+
+document.addEventListener("compositionend", (event) => {
+  if (event.target.id === "player-search") updatePlayerSearch(event.target);
 });
 
 document.addEventListener("change", (event) => {

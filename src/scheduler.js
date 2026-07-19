@@ -1,9 +1,17 @@
 import { EventEmitter } from "node:events";
 import {
   isFinalCaptureWindow,
+  localParts,
+  rankingUpdateFor,
   publishedSettlementFor
 } from "./domain/calendar.js";
 import { hasCollectorCredentials } from "./config.js";
+
+function rankingSignature(zones = []) {
+  return zones.flatMap((zone) => (zone.players || []).map((player) =>
+    `${Number(zone.index)}:${Number(player.rank)}:${String(player.playerId)}`
+  )).sort().join("|");
+}
 
 export class CollectorScheduler extends EventEmitter {
   constructor(config, collector, storage, { now = () => new Date() } = {}) {
@@ -35,7 +43,7 @@ export class CollectorScheduler extends EventEmitter {
       date,
       arena,
       this.config.finalCaptureWindowMinutes,
-      this.config.settlementGraceMinutes,
+      this.config.rankingStabilityMinutes,
       this.config.utcOffsetMinutes
     ));
     return (finalWindow ? this.config.finalPollIntervalSeconds : this.config.pollIntervalSeconds) * 1000;
@@ -71,11 +79,24 @@ export class CollectorScheduler extends EventEmitter {
       const arena = this.config.arenas.find((item) => item.key === collection.arenaKey);
       if (!arena) continue;
       const capturedAt = new Date(collection.capturedAt);
-      const { weekKey } = publishedSettlementFor(capturedAt, arena, this.config.utcOffsetMinutes);
+      const rankingUpdateAt = rankingUpdateFor(capturedAt, arena, this.config.utcOffsetMinutes);
+      const local = localParts(capturedAt, this.config.utcOffsetMinutes);
+      // Friday's pre-update response is usually still the previous week's board.
+      // Keep polling, but do not let it lock the settlement before the new board is available.
+      if (local.weekday === (arena.rankingUpdateWeekday ?? 5) && capturedAt < rankingUpdateAt) continue;
+      const { weekKey, publishedAt } = publishedSettlementFor(capturedAt, arena, this.config.utcOffsetMinutes);
+      const readyAt = new Date(publishedAt.getTime() + this.config.rankingStabilityMinutes * 60_000);
+      if (capturedAt < readyAt) continue;
       const existing = this.storage.getSettlement(arena.key, weekKey);
       const entryCount = collection.zones.reduce((total, zone) => total + zone.players.length, 0);
       if (existing?.status === "final") continue;
       if (existing?.status === "partial" && existing.entryCount >= entryCount) continue;
+      const previousSettlement = this.storage.listSettlements({ arenaKey: arena.key })
+        .find((item) => item.weekKey < weekKey && item.snapshotId);
+      const previousSnapshot = previousSettlement
+        ? this.storage.getSettlement(arena.key, previousSettlement.weekKey)?.snapshot
+        : null;
+      if (previousSnapshot && rankingSignature(previousSnapshot.zones) === rankingSignature(collection.zones)) continue;
       results.push(this.storage.finalizeWeek({
         arena,
         weekKey,

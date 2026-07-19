@@ -55,3 +55,82 @@ test("successful Friday ranking collection automatically settles the previous Th
     storage.close();
   }
 });
+
+test("Friday pre-update data cannot settle before the updated board passes the grace period", async () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  let now = new Date("2026-07-17T20:50:00.000Z");
+  const collector = {
+    running: false,
+    collect: async () => config.arenas.map((arena) => {
+      const zones = rankingZones(arena);
+      const snapshotId = storage.saveSnapshot({ arena, capturedAt: now, zones, source: "test" });
+      return { arenaKey: arena.key, snapshotId, capturedAt: now.toISOString(), zones };
+    }),
+    getState: () => ({ phase: "ready", running: false }),
+    close: () => {}
+  };
+  const scheduler = new CollectorScheduler(config, collector, storage, { now: () => now });
+
+  try {
+    await scheduler.collectNow();
+    assert.equal(storage.listSettlements({ seasonId: "32" }).length, 0);
+
+    now = new Date("2026-07-17T21:04:00.000Z");
+    await scheduler.collectNow();
+    assert.equal(storage.listSettlements({ seasonId: "32" }).length, 0);
+
+    now = new Date("2026-07-17T22:01:00.000Z");
+    await scheduler.collectNow();
+    const settlements = storage.listSettlements({ seasonId: "32" });
+    assert.equal(settlements.length, 2);
+    assert.deepEqual(new Set(settlements.map((item) => item.weekKey)), new Set(["2026-07-16"]));
+    assert.equal(settlements.every((item) => item.status === "final"), true);
+  } finally {
+    storage.close();
+  }
+});
+
+test("an unchanged board after the stability period is treated as stale", async () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  let fresh = false;
+  const now = new Date("2026-07-17T22:01:00.000Z");
+
+  for (const arena of config.arenas) {
+    const zones = rankingZones(arena);
+    const snapshotId = storage.saveSnapshot({
+      arena,
+      capturedAt: new Date("2026-07-10T22:01:00.000Z"),
+      zones,
+      source: "test"
+    });
+    storage.finalizeWeek({ arena, weekKey: "2026-07-09", seasonId: "32", snapshotId });
+  }
+
+  const collector = {
+    running: false,
+    collect: async () => config.arenas.map((arena) => {
+      const zones = rankingZones(arena);
+      if (fresh) zones[0].players[0].playerId += "-updated";
+      const snapshotId = storage.saveSnapshot({ arena, capturedAt: now, zones, source: "test" });
+      return { arenaKey: arena.key, snapshotId, capturedAt: now.toISOString(), zones };
+    }),
+    getState: () => ({ phase: "ready", running: false }),
+    close: () => {}
+  };
+  const scheduler = new CollectorScheduler(config, collector, storage, { now: () => now });
+
+  try {
+    await scheduler.collectNow();
+    assert.equal(storage.listSettlements({ seasonId: "32" }).length, 2);
+
+    fresh = true;
+    await scheduler.collectNow();
+    const settlements = storage.listSettlements({ seasonId: "32" });
+    assert.equal(settlements.length, 4);
+    assert.equal(settlements.filter((item) => item.weekKey === "2026-07-16").length, 2);
+  } finally {
+    storage.close();
+  }
+});
