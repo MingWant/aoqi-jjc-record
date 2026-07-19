@@ -1,0 +1,30 @@
+[
+  {
+    "key": "classic",
+    "name": "经典竞技场",
+    "protocolType": 1,
+    "settlementWeekday": 4,
+    "settlementTime": "21:00:00",
+    "rankingUpdateWeekday": 5,
+    "rankingUpdateTime": "05:00:00",
+    "zones": [
+      { "index": 0, "serverZoneId": 100, "name": "希望战区" },
+      { "index": 1, "serverZoneId": 101, "name": "终湮战区" },
+      { "index": 2, "serverZoneId": 102, "name": "归墟战区" }
+    ]
+  },
+  {
+    "key": "legend",
+    "name": "传奇竞技场",
+    "protocolType": 2,
+    "settlementWeekday": 4,
+    "settlementTime": "21:30:00",
+    "rankingUpdateWeekday": 5,
+    "rankingUpdateTime": "05:00:00",
+    "zones": [
+      { "index": 0, "serverZoneId": 200, "name": "未来战区" },
+      { "index": 1, "serverZoneId": 201, "name": "造化战区" },
+      { "index": 2, "serverZoneId": 202, "name": "誓约战区" }
+    ]
+  }
+]

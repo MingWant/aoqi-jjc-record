@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">战皇档案徽记</title>
+  <path fill="#e5ad36" d="M8 14h10l5 10 9-17 9 17 5-10h10l-5 31H13z"/>
+  <path fill="#fff" d="M18 42h28v5H18zM24 29h16v5H24z"/>
+  <circle cx="32" cy="18" r="4" fill="#17211c"/>
+  <path fill="#176b4d" d="M16 50h32v6H16z"/>
+</svg>

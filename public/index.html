@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#17211c">
+  <title>战皇档案</title>
+  <link rel="icon" href="/assets/arena-crest.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=20260719-9">
+</head>
+<body>
+  <section class="access-gate" id="access-gate" aria-labelledby="access-title">
+    <div class="access-panel">
+      <div class="access-brand">
+        <img src="/assets/arena-crest.svg" alt="" width="42" height="42">
+        <div>
+          <strong>战皇档案</strong>
+          <span>ARENA RECORDS</span>
+        </div>
+      </div>
+      <div class="access-heading">
+        <span>访问验证</span>
+        <h1 id="access-title">输入访问密钥</h1>
+      </div>
+      <form id="access-form" class="access-form">
+        <label class="form-field" for="access-token">
+          <span>访问密钥</span>
+          <input class="text-input" id="access-token" name="accessToken" type="password" required autocomplete="current-password" spellcheck="false">
+        </label>
+        <button class="command-button" type="submit" id="access-submit">进入系统</button>
+      </form>
+      <p class="access-message" id="access-message" role="alert" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <div class="app-shell" hidden>
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <img src="/assets/arena-crest.svg" alt="" width="42" height="42">
+        <div>
+          <strong>战皇档案</strong>
+          <span>ARENA RECORDS</span>
+        </div>
+      </div>
+      <nav class="main-nav" role="tablist" aria-label="数据视图">
+        <button type="button" class="nav-tab is-active" data-view="overview" role="tab" aria-selected="true">总览</button>
+        <button type="button" class="nav-tab" data-view="weeks" role="tab" aria-selected="false">周结算</button>
+        <button type="button" class="nav-tab" data-view="players" role="tab" aria-selected="false">玩家档案</button>
+        <button type="button" class="nav-tab" data-view="hall" role="tab" aria-selected="false">名人堂</button>
+        <button type="button" class="nav-tab" data-view="backfill" role="tab" aria-selected="false">历史补录</button>
+        <button type="button" class="nav-tab" data-view="system" role="tab" aria-selected="false">系统</button>
+      </nav>
+      <div class="sidebar-status">
+        <span class="status-dot" id="sidebar-status-dot" title="采集状态"></span>
+        <div>
+          <strong id="sidebar-status-text">正在连接</strong>
+          <span id="sidebar-status-time">--</span>
+        </div>
+      </div>
+    </aside>
+
+    <div class="workspace">
+      <header class="topbar">
+        <div class="page-heading">
+          <span id="page-eyebrow">竞技场统计</span>
+          <h1 id="page-title">赛季总览</h1>
+        </div>
+        <div class="topbar-controls">
+          <label class="select-field">
+            <span>赛季</span>
+            <select id="season-select" aria-label="选择赛季"></select>
+          </label>
+          <div class="segmented" id="arena-switch" aria-label="选择竞技场"></div>
+          <button type="button" class="command-button" id="refresh-button">刷新数据</button>
+          <button type="button" class="secondary-button" data-action="lock-access" title="清除当前浏览器的访问授权">锁定界面</button>
+        </div>
+      </header>
+
+      <main id="main-content" tabindex="-1">
+        <section class="view is-active" id="view-overview" data-view-panel="overview" aria-labelledby="page-title">
+          <div id="overview-content" class="loading-block">正在载入赛季数据</div>
+        </section>
+        <section class="view" id="view-weeks" data-view-panel="weeks" aria-labelledby="page-title">
+          <div id="weeks-content"></div>
+        </section>
+        <section class="view" id="view-players" data-view-panel="players" aria-labelledby="page-title">
+          <div id="players-content"></div>
+        </section>
+        <section class="view" id="view-hall" data-view-panel="hall" aria-labelledby="page-title">
+          <div id="hall-content"></div>
+        </section>
+        <section class="view" id="view-backfill" data-view-panel="backfill" aria-labelledby="page-title">
+          <div id="backfill-content"></div>
+        </section>
+        <section class="view" id="view-system" data-view-panel="system" aria-labelledby="page-title">
+          <div id="system-content"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  <script type="module" src="/app.js?v=20260719-9"></script>
+</body>
+</html>

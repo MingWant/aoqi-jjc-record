@@ -1,0 +1,16 @@
+{
+  "name": "arena-emperor-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Arena V3 weekly Top 5 collector and hall-of-fame statistics dashboard",
+  "engines": {
+    "node": ">=22.5.0"
+  },
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning src/server.js",
+    "demo": "node --disable-warning=ExperimentalWarning src/demo-server.js",
+    "test": "node --disable-warning=ExperimentalWarning --test",
+    "check": "node --check src/server.js && node --check public/app.js"
+  }
+}

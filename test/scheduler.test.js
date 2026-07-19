@@ -1,0 +1,57 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { loadConfig } from "../src/config.js";
+import { CollectorScheduler } from "../src/scheduler.js";
+import { Storage } from "../src/storage.js";
+
+function rankingZones(arena) {
+  return arena.zones.map((zone) => ({
+    ...zone,
+    players: [1, 2, 3, 4, 5].map((rank) => ({
+      rank,
+      playerId: `${arena.protocolType}${zone.serverZoneId}${rank}`,
+      nickname: `${zone.name}${rank}`,
+      clothes: "",
+      vipLevel: 0,
+      unionId: 0,
+      unionName: "自动结算联盟",
+      unionIcon: 0,
+      nicknameCard: ""
+    }))
+  }));
+}
+
+test("successful Friday ranking collection automatically settles the previous Thursday", async () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  const now = new Date("2026-07-18T15:00:00.000Z");
+  const collector = {
+    running: false,
+    collect: async () => config.arenas.map((arena) => {
+      const zones = rankingZones(arena);
+      const snapshotId = storage.saveSnapshot({ arena, capturedAt: now, zones, source: "test" });
+      return { arenaKey: arena.key, snapshotId, capturedAt: now.toISOString(), zones };
+    }),
+    getState: () => ({ phase: "ready", running: false }),
+    close: () => {}
+  };
+  const scheduler = new CollectorScheduler(config, collector, storage, { now: () => now });
+
+  try {
+    await scheduler.collectNow();
+    const settlements = storage.listSettlements({ seasonId: "32" });
+    assert.equal(settlements.length, 2);
+    assert.deepEqual(new Set(settlements.map((item) => item.weekKey)), new Set(["2026-07-16"]));
+    assert.equal(settlements.every((item) => item.status === "final"), true);
+    assert.equal(storage.seasonStats("32", "classic").seatCount, 15);
+    assert.equal(storage.seasonStats("32", "legend").seatCount, 15);
+
+    const originalSnapshotIds = new Map(settlements.map((item) => [item.arenaKey, item.snapshotId]));
+    await scheduler.collectNow();
+    const unchanged = storage.listSettlements({ seasonId: "32" });
+    assert.equal(unchanged.length, 2);
+    assert.equal(unchanged.every((item) => item.snapshotId === originalSnapshotIds.get(item.arenaKey)), true);
+  } finally {
+    storage.close();
+  }
+});

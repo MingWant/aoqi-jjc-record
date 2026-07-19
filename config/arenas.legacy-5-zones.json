@@ -1,0 +1,30 @@
+[
+  {
+    "key": "classic",
+    "name": "经典竞技场",
+    "protocolType": 1,
+    "settlementWeekday": 4,
+    "settlementTime": "21:00:00",
+    "zones": [
+      { "index": 0, "serverZoneId": 53, "name": "生命战区" },
+      { "index": 1, "serverZoneId": 54, "name": "是非战区" },
+      { "index": 2, "serverZoneId": 55, "name": "时间战区" },
+      { "index": 3, "serverZoneId": 56, "name": "力量战区" },
+      { "index": 4, "serverZoneId": 57, "name": "智慧战区" }
+    ]
+  },
+  {
+    "key": "legend",
+    "name": "传奇竞技场",
+    "protocolType": 2,
+    "settlementWeekday": 4,
+    "settlementTime": "21:30:00",
+    "zones": [
+      { "index": 0, "serverZoneId": 58, "name": "刚毅战区" },
+      { "index": 1, "serverZoneId": 59, "name": "守护战区" },
+      { "index": 2, "serverZoneId": 60, "name": "超能战区" },
+      { "index": 3, "serverZoneId": 61, "name": "热血战区" },
+      { "index": 4, "serverZoneId": 62, "name": "真知战区" }
+    ]
+  }
+]

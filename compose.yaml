@@ -1,0 +1,16 @@
+services:
+  arena-tracker:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      HOST: 0.0.0.0
+      DATA_FILE: /app/data/arena-tracker.sqlite
+    ports:
+      - "8787:8787"
+    volumes:
+      - arena-data:/app/data
+
+volumes:
+  arena-data:
