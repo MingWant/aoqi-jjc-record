@@ -85,6 +85,59 @@ test("a snapshot missing a configured zone remains partial", () => {
   }
 });
 
+test("snapshot cleanup deletes only old snapshots not referenced by settlements", () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  const arena = config.arenas.find((item) => item.key === "classic");
+  const zones = [{
+    ...arena.zones[0],
+    players: [{
+      rank: 1,
+      playerId: "cleanup-player",
+      nickname: "清理测试玩家",
+      unionId: 0,
+      unionName: "未加入联盟"
+    }]
+  }];
+
+  try {
+    storage.createSeason({
+      id: "31",
+      label: "第31届",
+      startsAt: "2026-05-29T12:00:00+08:00",
+      endsAt: "2026-07-02T23:59:59+08:00"
+    });
+    const referencedId = storage.saveSnapshot({
+      arena,
+      capturedAt: new Date("2026-06-26T05:00:00.000Z"),
+      zones,
+      source: "test"
+    });
+    storage.finalizeWeek({ arena, weekKey: "2026-06-25", seasonId: "31", snapshotId: referencedId });
+    const unreferencedId = storage.saveSnapshot({
+      arena,
+      capturedAt: new Date("2026-06-26T06:00:00.000Z"),
+      zones,
+      source: "test"
+    });
+    const recentId = storage.saveSnapshot({
+      arena,
+      capturedAt: new Date("2026-07-20T06:00:00.000Z"),
+      zones,
+      source: "test"
+    });
+
+    const deleted = storage.cleanupSnapshots({ before: new Date("2026-07-01T00:00:00.000Z") });
+    assert.equal(deleted, 1);
+    assert.notEqual(storage.getSnapshot(referencedId), null);
+    assert.equal(storage.getSnapshot(unreferencedId), null);
+    assert.notEqual(storage.getSnapshot(recentId), null);
+    assert.equal(storage.db.prepare("SELECT COUNT(*) count FROM rank_entries WHERE snapshot_id = ?").get(unreferencedId).count, 0);
+  } finally {
+    storage.close();
+  }
+});
+
 test("demo snapshots use the configured zones and independent arena standings", () => {
   const config = loadConfig({ dataFile: ":memory:", demoMode: true });
   const storage = new Storage(config);

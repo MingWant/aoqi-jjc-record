@@ -593,6 +593,20 @@ export class Storage {
     return Number(result.lastInsertRowid);
   }
 
+  cleanupSnapshots({ before } = {}) {
+    const cutoff = normalizeIso(before ?? new Date());
+    return this.transaction(() => {
+      const result = this.db.prepare(`
+        DELETE FROM snapshots
+        WHERE captured_at < ?
+          AND NOT EXISTS (
+            SELECT 1 FROM weekly_settlements ws WHERE ws.snapshot_id = snapshots.id
+          )
+      `).run(cutoff);
+      return Number(result.changes);
+    });
+  }
+
   latestSnapshot(arenaKey) {
     const snapshot = this.db.prepare(`
       SELECT * FROM snapshots WHERE arena_key = ? AND status = 'success'

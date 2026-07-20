@@ -7,6 +7,8 @@ import {
 } from "./domain/calendar.js";
 import { hasCollectorCredentials } from "./config.js";
 
+const SNAPSHOT_CLEANUP_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 function rankingSignature(zones = []) {
   return zones.flatMap((zone) => (zone.players || []).map((player) =>
     `${Number(zone.index)}:${Number(player.rank)}:${String(player.playerId)}`
@@ -24,6 +26,7 @@ export class CollectorScheduler extends EventEmitter {
     this.ticking = false;
     this.lastPollAt = null;
     this.nextPollAt = null;
+    this.lastCleanupAt = null;
     this.startedAt = null;
   }
 
@@ -54,6 +57,7 @@ export class CollectorScheduler extends EventEmitter {
     this.ticking = true;
     const now = this.now();
     try {
+      this.cleanupSnapshotsIfDue(now);
       const canCollect = hasCollectorCredentials(this.config);
       const interval = this.currentIntervalMs(now);
       const due = force || !this.lastPollAt || now.getTime() - this.lastPollAt.getTime() >= interval;
@@ -70,6 +74,22 @@ export class CollectorScheduler extends EventEmitter {
     } finally {
       this.ticking = false;
       this.emit("state", this.getState());
+    }
+  }
+
+  cleanupSnapshotsIfDue(now = this.now()) {
+    const retentionDays = Number(this.config.snapshotRetentionDays ?? 30);
+    if (retentionDays <= 0) return 0;
+    if (this.lastCleanupAt && now.getTime() - this.lastCleanupAt.getTime() < SNAPSHOT_CLEANUP_INTERVAL_MS) return 0;
+    this.lastCleanupAt = now;
+    const before = new Date(now.getTime() - retentionDays * SNAPSHOT_CLEANUP_INTERVAL_MS);
+    try {
+      const deleted = this.storage.cleanupSnapshots({ before });
+      if (deleted > 0) this.storage.addEvent("info", "cleanup", `Deleted ${deleted} unreferenced snapshots`);
+      return deleted;
+    } catch (error) {
+      this.storage.addEvent("error", "cleanup", `Snapshot cleanup failed: ${error.message}`);
+      return 0;
     }
   }
 
@@ -132,6 +152,7 @@ export class CollectorScheduler extends EventEmitter {
       startedAt: this.startedAt,
       lastPollAt: this.lastPollAt?.toISOString() ?? null,
       nextPollAt: this.nextPollAt?.toISOString() ?? null,
+      lastCleanupAt: this.lastCleanupAt?.toISOString() ?? null,
       credentialsConfigured: hasCollectorCredentials(this.config),
       collector: this.collector.getState()
     };

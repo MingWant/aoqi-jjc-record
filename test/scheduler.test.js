@@ -134,3 +134,45 @@ test("an unchanged board after the stability period is treated as stale", async 
     storage.close();
   }
 });
+
+test("the scheduler cleans expired unreferenced snapshots at most once per day", async () => {
+  const config = loadConfig({
+    dataFile: ":memory:",
+    snapshotRetentionDays: 1,
+    login: { mode: "account", account: "", password: "" }
+  });
+  const storage = new Storage(config);
+  const arena = config.arenas[0];
+  let now = new Date("2026-07-20T00:00:00.000Z");
+  const collector = {
+    running: false,
+    collect: async () => [],
+    getState: () => ({ phase: "idle", running: false }),
+    close: () => {}
+  };
+  const scheduler = new CollectorScheduler(config, collector, storage, { now: () => now });
+  const addExpiredSnapshot = () => storage.saveSnapshot({
+    arena,
+    capturedAt: new Date("2026-07-18T00:00:00.000Z"),
+    zones: rankingZones(arena),
+    source: "test"
+  });
+
+  try {
+    const firstId = addExpiredSnapshot();
+    await scheduler.tick();
+    assert.equal(storage.getSnapshot(firstId), null);
+
+    const secondId = addExpiredSnapshot();
+    now = new Date("2026-07-20T01:00:00.000Z");
+    await scheduler.tick();
+    assert.notEqual(storage.getSnapshot(secondId), null);
+
+    now = new Date("2026-07-21T01:00:00.000Z");
+    await scheduler.tick();
+    assert.equal(storage.getSnapshot(secondId), null);
+    assert.equal(scheduler.getState().lastCleanupAt, now.toISOString());
+  } finally {
+    storage.close();
+  }
+});
