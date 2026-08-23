@@ -753,7 +753,7 @@ export class Storage {
     const arenaClause = arenaKey ? "AND arena_key = ?" : "";
     if (arenaKey) params.push(arenaKey);
     const settlementWeeks = this.db.prepare(`
-      SELECT DISTINCT week_key weekKey, cutoff_at cutoffAt, arena_key arenaKey, status
+      SELECT DISTINCT season_id seasonId, week_key weekKey, cutoff_at cutoffAt, arena_key arenaKey, status
       FROM weekly_settlements
       WHERE season_id IN (${placeholders}) AND status IN ('final', 'partial') ${arenaClause}
       ORDER BY cutoff_at
@@ -765,7 +765,7 @@ export class Storage {
       ORDER BY cutoff_at
     `).all(...params);
     const timeline = this.buildStatsTimeline(seasonIds, arenaKey, allWeekRows);
-    const uniqueTimeline = new Map(timeline.map((week) => [week.weekKey, week]));
+    const uniqueTimeline = new Map(timeline.map((week) => [`${week.seasonId}:${week.weekKey}`, week]));
     const elapsedTimeline = timeline.filter((week) => week.status !== "future");
     return {
       ...calculateStandings(rows, settlementWeeks, elapsedTimeline),

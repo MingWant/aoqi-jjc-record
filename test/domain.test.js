@@ -92,6 +92,30 @@ test("missing settlement weeks break emperor streaks", () => {
   assert.equal(result.standings[0].currentStreak, 1);
 });
 
+test("emperor streaks reset when a new season begins", () => {
+  const weeks = [
+    { seasonId: "29", weekKey: "2026-04-23" },
+    { seasonId: "29", weekKey: "2026-04-30" },
+    { seasonId: "30", weekKey: "2026-05-07" },
+    { seasonId: "30", weekKey: "2026-05-14" }
+  ];
+  const rows = weeks.map((week) => ({
+    ...week,
+    playerId: "player-1",
+    nickname: "玩家",
+    unionName: "联盟",
+    arenaKey: "classic",
+    zoneIndex: 0,
+    rank: 1,
+    capturedAt: `${week.weekKey}T13:00:00.000Z`
+  }));
+
+  const result = calculateStandings(rows, weeks);
+  assert.equal(result.standings[0].emperorCount, 4);
+  assert.equal(result.standings[0].longestStreak, 2);
+  assert.equal(result.standings[0].currentStreak, 2);
+});
+
 test("fixed season weeks produce settlement dates and an end time", () => {
   const season = {
     startsAt: "2026-07-03T12:00:00+08:00",

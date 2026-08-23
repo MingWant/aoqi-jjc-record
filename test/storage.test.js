@@ -189,6 +189,62 @@ test("hall standings use fixed three-season cycles from season 29", () => {
   }
 });
 
+test("hall streaks restart at each season boundary", () => {
+  const config = loadConfig({ dataFile: ":memory:" });
+  const storage = new Storage(config);
+  const arena = config.arenas.find((item) => item.key === "classic");
+  const zones = [
+    {
+      ...arena.zones[0],
+      players: [{
+        rank: 1,
+        playerId: "season-streak-player",
+        nickname: "跨届玩家",
+        unionId: 0,
+        unionName: "未加入联盟",
+        clothes: "",
+        vipLevel: 0,
+        unionIcon: 0,
+        nicknameCard: ""
+      }]
+    }
+  ];
+
+  try {
+    storage.createSeason({
+      id: "29",
+      label: "第29届",
+      startsAt: "2026-04-17T12:00:00+08:00",
+      endsAt: "2026-04-30T21:00:00+08:00"
+    });
+    storage.createSeason({
+      id: "30",
+      label: "第30届",
+      startsAt: "2026-05-01T12:00:00+08:00",
+      endsAt: "2026-05-14T21:00:00+08:00"
+    });
+
+    for (const [seasonId, weekKeys] of [
+      ["29", ["2026-04-23", "2026-04-30"]],
+      ["30", ["2026-05-07", "2026-05-14"]]
+    ]) {
+      for (const weekKey of weekKeys) {
+        const capturedAt = new Date(`${weekKey}T14:00:00.000Z`);
+        const snapshotId = storage.saveSnapshot({ arena, capturedAt, zones, source: "test" });
+        storage.finalizeWeek({ arena, weekKey, seasonId, snapshotId, finalizedAt: capturedAt });
+      }
+    }
+
+    const hall = storage.hallStats({ throughSeasonId: "30", arenaKey: "classic", window: 3 });
+    const standing = hall.standings.find((player) => player.playerId === "season-streak-player");
+    assert.equal(standing.emperorCount, 4);
+    assert.equal(standing.longestStreak, 2);
+    assert.equal(standing.currentStreak, 2);
+  } finally {
+    storage.close();
+  }
+});
+
 test("player and union labels remain stable when game names change", () => {
   const config = loadConfig({ dataFile: ":memory:" });
   const storage = new Storage(config);

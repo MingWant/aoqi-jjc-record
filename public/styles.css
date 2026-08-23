@@ -584,10 +584,30 @@ main {
 }
 
 .data-table-wrap {
-  overflow: auto;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: var(--green) var(--surface-muted);
+  scrollbar-width: thin;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface);
+}
+
+.data-table-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+
+.data-table-wrap::-webkit-scrollbar-track {
+  border-top: 1px solid var(--line);
+  background: var(--surface-muted);
+}
+
+.data-table-wrap::-webkit-scrollbar-thumb {
+  border: 2px solid var(--surface-muted);
+  border-radius: 999px;
+  background: var(--green);
 }
 
 .data-table {
@@ -1879,6 +1899,9 @@ main {
 
   .data-table-wrap {
     max-width: calc(100vw - 32px);
+    overflow-x: scroll;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x pan-y;
   }
 
   .event-row {

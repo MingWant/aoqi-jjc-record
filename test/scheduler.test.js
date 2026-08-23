@@ -59,7 +59,7 @@ test("successful Friday ranking collection automatically settles the previous Th
 test("Friday pre-update data cannot settle before the updated board passes the grace period", async () => {
   const config = loadConfig({ dataFile: ":memory:" });
   const storage = new Storage(config);
-  let now = new Date("2026-07-17T20:50:00.000Z");
+  let now = new Date("2026-07-16T20:50:00.000Z");
   const collector = {
     running: false,
     collect: async () => config.arenas.map((arena) => {
@@ -76,11 +76,11 @@ test("Friday pre-update data cannot settle before the updated board passes the g
     await scheduler.collectNow();
     assert.equal(storage.listSettlements({ seasonId: "32" }).length, 0);
 
-    now = new Date("2026-07-17T21:04:00.000Z");
+    now = new Date("2026-07-16T21:04:00.000Z");
     await scheduler.collectNow();
     assert.equal(storage.listSettlements({ seasonId: "32" }).length, 0);
 
-    now = new Date("2026-07-17T22:01:00.000Z");
+    now = new Date("2026-07-16T22:01:00.000Z");
     await scheduler.collectNow();
     const settlements = storage.listSettlements({ seasonId: "32" });
     assert.equal(settlements.length, 2);
