@@ -479,6 +479,7 @@ export class Storage {
           planned_weeks = excluded.planned_weeks,
           active = CASE WHEN excluded.active = 1 THEN 1 ELSE seasons.active END
       `).run(String(id), String(label), start, end, fixedWeeks, active ? 1 : 0, new Date().toISOString());
+      this.reassignSettlementsToSeasons({ editedSeasonId: String(id), startsAt: start, endsAt: end });
     });
     return this.getSeason(String(id));
   }
@@ -543,15 +544,29 @@ export class Storage {
         && other.startsAt < (endsAt ?? "9999-12-31T23:59:59.999Z");
       if (overlaps) throw new Error(`Season ${id} overlaps ${other.id} (${other.label})`);
     }
-    const bounds = this.db.prepare(`
-      SELECT MIN(cutoff_at) minCutoff, MAX(cutoff_at) maxCutoff
-      FROM weekly_settlements WHERE season_id = ?
-    `).get(id);
-    if (bounds?.minCutoff && bounds.minCutoff < startsAt) {
-      throw new Error(`Season ${id} starts after an existing settlement`);
+  }
+
+  reassignSettlementsToSeasons({ editedSeasonId, startsAt, endsAt }) {
+    const settlements = this.db.prepare(`
+      SELECT id, season_id seasonId, week_key weekKey, cutoff_at cutoffAt
+      FROM weekly_settlements ORDER BY cutoff_at
+    `).all();
+    const update = this.db.prepare("UPDATE weekly_settlements SET season_id = ? WHERE id = ?");
+    let moved = 0;
+    for (const settlement of settlements) {
+      const season = this.seasonForCutoff(settlement.cutoffAt);
+      if (!season) {
+        const direction = endsAt && settlement.cutoffAt > endsAt
+          ? "下一届"
+          : settlement.cutoffAt < startsAt ? "上一届" : "相邻届次";
+        throw new Error(`请先创建能覆盖 ${settlement.weekKey} 的${direction}竞技场届次`);
+      }
+      if (season.id === settlement.seasonId) continue;
+      update.run(season.id, settlement.id);
+      moved += 1;
     }
-    if (bounds?.maxCutoff && endsAt && bounds.maxCutoff > endsAt) {
-      throw new Error(`Season ${id} ends before an existing settlement`);
+    if (moved > 0) {
+      this.addEvent("info", "season", `竞技场届次 ${editedSeasonId} 调整后，已重新归属 ${moved} 条周结算`);
     }
   }
 

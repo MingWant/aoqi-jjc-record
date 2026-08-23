@@ -362,20 +362,32 @@ test("a manually created player without a union gains the collected union by pla
 });
 
 test("an existing open season can be updated with a same-time planned end", () => {
-  const config = loadConfig({ dataFile: ":memory:" });
+  const config = loadConfig({ dataFile: ":memory:", initialSeason: null });
   const storage = new Storage(config);
+  const arena = config.arenas.find((item) => item.key === "classic");
   try {
     storage.createSeason({
       id: "40",
       label: "第40届",
       startsAt: "2026-07-03T12:00:00+08:00"
     });
+    storage.finalizeWeek({ arena, weekKey: "2026-08-06", seasonId: "40" });
+    assert.throws(
+      () => storage.createSeason({
+        id: "40",
+        label: "第40届竞技场",
+        startsAt: "2026-07-03T12:00:00+08:00",
+        weeks: 4
+      }),
+      /请先创建能覆盖 2026-08-06 的下一届竞技场届次/
+    );
     storage.createSeason({
       id: "41",
       label: "第41届",
       startsAt: "2026-07-31T12:00:00+08:00",
       endsAt: "2026-08-28T12:00:00+08:00"
     });
+    assert.equal(storage.getSettlement("classic", "2026-08-06").seasonId, "41");
     const season = storage.createSeason({
       id: "40",
       label: "第40届竞技场",
