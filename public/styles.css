@@ -1692,6 +1692,28 @@ main {
   font-size: 10px;
 }
 
+.season-end-preview {
+  flex: 1 0 100%;
+  margin: 0;
+  border-left: 3px solid var(--line-strong);
+  padding: 7px 9px;
+  color: var(--ink-soft);
+  background: var(--surface);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.season-end-preview.is-calculated {
+  border-left-color: var(--green);
+  color: var(--ink);
+}
+
+.season-editor input:disabled {
+  opacity: 1;
+  color: var(--ink-soft);
+  background: var(--surface-muted);
+}
+
 .season-table-wrap {
   margin-top: 12px;
 }

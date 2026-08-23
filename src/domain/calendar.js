@@ -151,20 +151,11 @@ export function seasonSettlementWeeks(season, arena, utcOffsetMinutes = 480, now
   return result;
 }
 
-export function seasonEndForWeeks(startsAt, weeks, arenas, utcOffsetMinutes = 480) {
+export function seasonEndForWeeks(startsAt, weeks, _arenas, _utcOffsetMinutes = 480) {
   const count = Number(weeks);
   if (!Number.isInteger(count) || count < 1 || count > 5200) {
     throw new Error("Season weeks must be an integer between 1 and 5200");
   }
-  const configured = Array.isArray(arenas) ? arenas.filter(Boolean) : [arenas].filter(Boolean);
-  if (!configured.length) throw new Error("At least one arena is required to calculate season weeks");
   const start = requiredDate(startsAt, "Season start");
-  const cutoffs = configured.map((arena) => {
-    let weekKey = settlementDateFor(start, arena, utcOffsetMinutes);
-    const cutoff = cutoffForWeek(weekKey, arena, utcOffsetMinutes);
-    if (cutoff.getTime() < start.getTime()) weekKey = addLocalDays(weekKey, 7, utcOffsetMinutes);
-    weekKey = addLocalDays(weekKey, (count - 1) * 7, utcOffsetMinutes);
-    return cutoffForWeek(weekKey, arena, utcOffsetMinutes);
-  });
-  return new Date(Math.max(...cutoffs.map((date) => date.getTime())));
+  return new Date(start.getTime() + count * 7 * 24 * 60 * 60 * 1000);
 }

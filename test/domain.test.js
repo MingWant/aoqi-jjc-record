@@ -119,7 +119,7 @@ test("emperor streaks reset when a new season begins", () => {
 test("fixed season weeks produce settlement dates and an end time", () => {
   const season = {
     startsAt: "2026-07-03T12:00:00+08:00",
-    endsAt: "2026-07-30T21:30:00+08:00"
+    endsAt: "2026-07-31T12:00:00+08:00"
   };
   assert.deepEqual(seasonSettlementWeeks(season, arena, 480), [
     "2026-07-09",
@@ -129,6 +129,6 @@ test("fixed season weeks produce settlement dates and an end time", () => {
   ]);
   assert.equal(
     seasonEndForWeeks("2026-07-03T12:00:00+08:00", 4, [arena], 480).toISOString(),
-    "2026-07-30T13:00:00.000Z"
+    "2026-07-31T04:00:00.000Z"
   );
 });

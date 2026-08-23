@@ -361,21 +361,33 @@ test("a manually created player without a union gains the collected union by pla
   }
 });
 
-test("creating a season with planned weeks calculates and persists its end", () => {
+test("an existing open season can be updated with a same-time planned end", () => {
   const config = loadConfig({ dataFile: ":memory:" });
   const storage = new Storage(config);
   try {
-    const season = storage.createSeason({
+    storage.createSeason({
       id: "40",
       label: "第40届",
+      startsAt: "2026-07-03T12:00:00+08:00"
+    });
+    storage.createSeason({
+      id: "41",
+      label: "第41届",
+      startsAt: "2026-07-31T12:00:00+08:00",
+      endsAt: "2026-08-28T12:00:00+08:00"
+    });
+    const season = storage.createSeason({
+      id: "40",
+      label: "第40届竞技场",
       startsAt: "2026-07-03T12:00:00+08:00",
       weeks: 4
     });
+    assert.equal(season.label, "第40届竞技场");
     assert.equal(season.plannedWeeks, 4);
-    assert.equal(season.endsAt, "2026-07-30T13:30:00.000Z");
-    assert.equal(storage.seasonForCutoff(new Date("2026-07-30T13:10:00.000Z"), "40").id, "40");
+    assert.equal(season.endsAt, "2026-07-31T04:00:00.000Z");
+    assert.equal(storage.seasonForCutoff(new Date("2026-07-30T13:30:00.000Z"), "40").id, "40");
     assert.throws(
-      () => storage.seasonForCutoff(new Date("2026-08-06T13:10:00.000Z"), "40"),
+      () => storage.seasonForCutoff(new Date("2026-07-31T04:00:00.001Z"), "40"),
       /does not cover/
     );
   } finally {

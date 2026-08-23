@@ -539,8 +539,8 @@ export class Storage {
     `).all(id);
     for (const other of others) {
       if (!endsAt || !other.endsAt) continue;
-      const overlaps = startsAt <= (other.endsAt ?? "9999-12-31T23:59:59.999Z")
-        && other.startsAt <= (endsAt ?? "9999-12-31T23:59:59.999Z");
+      const overlaps = startsAt < (other.endsAt ?? "9999-12-31T23:59:59.999Z")
+        && other.startsAt < (endsAt ?? "9999-12-31T23:59:59.999Z");
       if (overlaps) throw new Error(`Season ${id} overlaps ${other.id} (${other.label})`);
     }
     const bounds = this.db.prepare(`

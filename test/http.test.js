@@ -123,7 +123,7 @@ test("HTTP app serves a protected dashboard and admin API", async () => {
     }).then(async (response) => ({ status: response.status, body: await response.json() }));
     assert.equal(createdSeason.status, 201);
     assert.equal(createdSeason.body.plannedWeeks, 4);
-    assert.equal(createdSeason.body.endsAt, "2026-07-30T13:30:00.000Z");
+    assert.equal(createdSeason.body.endsAt, "2026-07-31T04:00:00.000Z");
 
     const overlappingSeason = await authenticatedFetch(`http://127.0.0.1:${port}/api/admin/seasons`, {
       method: "POST",
