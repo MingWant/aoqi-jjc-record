@@ -1626,6 +1626,84 @@ main {
   margin-top: 28px;
 }
 
+.season-guidance {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  border: 1px solid #b9d6ca;
+  border-radius: 6px;
+  padding: 13px 15px;
+  background: var(--green-soft);
+}
+
+.season-guidance-mark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 800;
+}
+
+.season-guidance strong,
+.season-guidance span {
+  display: block;
+}
+
+.season-guidance strong {
+  font-size: 12px;
+}
+
+.season-guidance div > span {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.season-editor {
+  margin-top: 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 14px;
+  background: var(--surface-muted);
+}
+
+.season-editor-heading {
+  flex: 1 0 100%;
+}
+
+.season-editor-heading strong,
+.season-editor-heading span,
+.season-table .player-id {
+  display: block;
+}
+
+.season-editor-heading strong {
+  font-size: 12px;
+}
+
+.season-editor-heading span {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.season-table-wrap {
+  margin-top: 12px;
+}
+
+.season-table {
+  min-width: 720px;
+}
+
+.season-table .player-id {
+  margin-top: 3px;
+}
+
 .kv-list {
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1951,5 +2029,25 @@ main {
 
   .new-player-form {
     grid-template-columns: 1fr;
+  }
+
+  .season-guidance {
+    grid-template-columns: 32px minmax(0, 1fr);
+    padding: 12px;
+  }
+
+  .season-guidance-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .season-editor .form-field {
+    flex: 1 0 100%;
+    min-width: 0;
+  }
+
+  .season-editor .command-button,
+  .season-editor .secondary-button {
+    width: 100%;
   }
 }

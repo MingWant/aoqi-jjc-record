@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#17211c">
   <title>战皇档案</title>
   <link rel="icon" href="/assets/arena-crest.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/styles.css?v=20260823-1">
+  <link rel="stylesheet" href="/styles.css?v=20260823-2">
 </head>
 <body>
   <section class="access-gate" id="access-gate" aria-labelledby="access-title">
@@ -63,12 +63,12 @@
       <header class="topbar">
         <div class="page-heading">
           <span id="page-eyebrow">竞技场统计</span>
-          <h1 id="page-title">赛季总览</h1>
+          <h1 id="page-title">竞技场届次总览</h1>
         </div>
         <div class="topbar-controls">
           <label class="select-field">
-            <span>赛季</span>
-            <select id="season-select" aria-label="选择赛季"></select>
+            <span>竞技场届次</span>
+            <select id="season-select" aria-label="选择竞技场届次"></select>
           </label>
           <div class="segmented" id="arena-switch" aria-label="选择竞技场"></div>
           <button type="button" class="command-button" id="refresh-button">刷新数据</button>
@@ -78,7 +78,7 @@
 
       <main id="main-content" tabindex="-1">
         <section class="view is-active" id="view-overview" data-view-panel="overview" aria-labelledby="page-title">
-          <div id="overview-content" class="loading-block">正在载入赛季数据</div>
+          <div id="overview-content" class="loading-block">正在载入竞技场届次数据</div>
         </section>
         <section class="view" id="view-weeks" data-view-panel="weeks" aria-labelledby="page-title">
           <div id="weeks-content"></div>
@@ -100,6 +100,6 @@
   </div>
 
   <div class="toast-region" id="toast-region" aria-live="polite"></div>
-  <script type="module" src="/app.js?v=20260823-1"></script>
+  <script type="module" src="/app.js?v=20260823-2"></script>
 </body>
 </html>

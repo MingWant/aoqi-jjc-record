@@ -1,3 +1,5 @@
+import { formElementId } from "./form-utils.js";
+
 const state = {
   view: "overview",
   arenaKey: "classic",
@@ -30,12 +32,12 @@ const state = {
 };
 
 const viewTitles = {
-  overview: ["竞技场统计", "赛季总览"],
+  overview: ["竞技场统计", "竞技场届次总览"],
   weeks: ["竞技场统计", "周结算"],
   players: ["竞技场统计", "玩家档案"],
   hall: ["竞技场统计", "名人堂候选"],
   backfill: ["数据维护", "历史周榜补录"],
-  system: ["运行状态", "采集与赛季"]
+  system: ["运行状态", "采集与届次管理"]
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -464,7 +466,7 @@ function setView(view) {
 function renderTopbar() {
   const seasons = state.bootstrap?.seasons || [];
   $("#season-select").innerHTML = seasons.map((season) =>
-    `<option value="${escapeHtml(season.id)}" ${season.id === state.seasonId ? "selected" : ""}>${escapeHtml(season.label)}${season.active ? " · 当前" : ""}</option>`
+    `<option value="${escapeHtml(season.id)}" ${season.id === state.seasonId ? "selected" : ""}>${escapeHtml(season.label)}${season.active ? " · 当前届次" : ""}</option>`
   ).join("");
   $("#arena-switch").innerHTML = (state.bootstrap?.config?.arenas || []).map((arena) =>
     `<button type="button" class="segment-button${arena.key === state.arenaKey ? " is-active" : ""}" data-arena="${escapeHtml(arena.key)}">${escapeHtml(arena.name)}</button>`
@@ -575,7 +577,7 @@ function renderZoneGrid(snapshot) {
 function renderOverview() {
   const data = arenaData();
   const stats = data.stats;
-  $("#overview-content").innerHTML = `<div class="section-header"><div><h2>${escapeHtml(currentArena().name)} · 当前赛季</h2><p>${escapeHtml(state.bootstrap.seasons.find((season) => season.id === state.seasonId)?.label || "")}</p></div><span class="status-badge ${data.latest ? "is-final" : ""}">${data.latest ? `采集于 ${escapeHtml(dateTime(data.latest.capturedAt))}` : "暂无采集"}</span></div>
+  $("#overview-content").innerHTML = `<div class="section-header"><div><h2>${escapeHtml(currentArena().name)} · 当前届次</h2><p>${escapeHtml(state.bootstrap.seasons.find((season) => season.id === state.seasonId)?.label || "")}</p></div><span class="status-badge ${data.latest ? "is-final" : ""}">${data.latest ? `采集于 ${escapeHtml(dateTime(data.latest.capturedAt))}` : "暂无采集"}</span></div>
     ${renderMetrics(stats, data.latest)}
     ${renderCandidate(stats)}
     <div class="content-grid"><section class="section-block"><div class="section-header"><h2>战皇统计</h2><p>按战皇数排序</p></div>${renderStandingsTable(stats)}</section><section class="section-block"><div class="section-header"><h2>最近榜单</h2><p>每个战区前五</p></div>${renderZoneGrid(data.latest)}</section></div>`;
@@ -1161,10 +1163,10 @@ function renderSystem() {
     : `<button type="button" class="command-button" title="验证管理密码后可手动采集" disabled>立即采集</button>`;
   const editingSeason = seasons.find((season) => season.id === state.seasonEditingId) || null;
   const seasonEditor = adminUnlocked()
-    ? `<form class="inline-form" id="season-form"><label class="form-field"><span>编号</span><input class="text-input" name="id" required value="${escapeHtml(editingSeason?.id || "")}" ${editingSeason ? "readonly" : ""}></label><label class="form-field"><span>名称</span><input class="text-input" name="label" required value="${escapeHtml(editingSeason?.label || "")}"></label><label class="form-field"><span>开始时间</span><input class="text-input" name="startsAt" type="datetime-local" required value="${escapeHtml(dateTimeLocalValue(editingSeason?.startsAt))}"></label><label class="form-field"><span>计划周数（可选）</span><input class="text-input" name="weeks" type="number" min="1" max="5200" placeholder="留空为开放赛季" value="${escapeHtml(editingSeason?.plannedWeeks || "")}"></label><label class="form-field"><span>结束时间（可选）</span><input class="text-input" name="endsAt" type="datetime-local" value="${escapeHtml(dateTimeLocalValue(editingSeason?.endsAt))}"></label><button class="secondary-button" type="submit">${editingSeason ? "保存修改" : "新增赛季"}</button>${editingSeason ? `<button class="secondary-button" type="button" data-action="cancel-season-edit">取消编辑</button>` : ""}</form><p class="admin-help">计划周数和结束时间二选一；填写计划周数时，系统按最后一个竞技场的结算截止自动计算结束时间。</p>`
+    ? `<form class="inline-form season-editor" id="season-form"><div class="season-editor-heading"><strong>${editingSeason ? `编辑 ${escapeHtml(editingSeason.label)}` : "新增竞技场届次"}</strong><span>${editingSeason ? "修改届次名称或时间范围" : "换届后需先建立下一届，再设为当前届次"}</span></div><label class="form-field"><span>届次编号</span><input class="text-input" name="id" required value="${escapeHtml(editingSeason?.id || "")}" ${editingSeason ? "readonly" : ""}></label><label class="form-field"><span>届次名称</span><input class="text-input" name="label" required value="${escapeHtml(editingSeason?.label || "")}"></label><label class="form-field"><span>开始时间</span><input class="text-input" name="startsAt" type="datetime-local" required value="${escapeHtml(dateTimeLocalValue(editingSeason?.startsAt))}"></label><label class="form-field"><span>计划周数（可选）</span><input class="text-input" name="weeks" type="number" min="1" max="5200" placeholder="留空则不自动结束" value="${escapeHtml(editingSeason?.plannedWeeks || "")}"></label><label class="form-field"><span>结束时间（可选）</span><input class="text-input" name="endsAt" type="datetime-local" value="${escapeHtml(dateTimeLocalValue(editingSeason?.endsAt))}"></label><button class="command-button" type="submit">${editingSeason ? "保存届次修改" : "新增届次"}</button>${editingSeason ? `<button class="secondary-button" type="button" data-action="cancel-season-edit">取消</button>` : ""}</form><p class="admin-help">计划周数和结束时间二选一；填写计划周数时，系统会按最后一个竞技场的结算截止时间计算本届结束时间。</p>`
     : "";
-  const seasonRows = seasons.map((season) => `<tr><td>${escapeHtml(season.label)} <span class="player-id">${escapeHtml(season.id)}</span></td><td>${escapeHtml(dateTime(season.startsAt))}</td><td>${escapeHtml(dateTime(season.endsAt))}${season.plannedWeeks ? ` · ${number(season.plannedWeeks)} 周` : season.endsAt ? "" : " · 开放"}</td><td>${season.active ? "当前" : "历史"}</td><td>${adminUnlocked() ? `<span class="action-row">${!season.active ? `<button class="secondary-button" type="button" data-activate-season="${escapeHtml(season.id)}">设为当前</button>` : ""}<button class="secondary-button" type="button" data-edit-season="${escapeHtml(season.id)}">编辑</button></span>` : ""}</td></tr>`).join("");
-  $("#system-content").innerHTML = `<div class="system-grid"><div><section class="system-block"><div class="section-header"><h2>采集状态</h2>${collectButton}</div><dl class="kv-list"><div class="kv-row"><dt>采集器</dt><dd>${escapeHtml(scheduler.credentialsConfigured ? scheduler.collector.phase : "未配置账号")}</dd></div><div class="kv-row"><dt>最近成功</dt><dd>${escapeHtml(dateTime(scheduler.collector.lastSuccessAt))}</dd></div><div class="kv-row"><dt>下次计划</dt><dd>${escapeHtml(dateTime(scheduler.nextPollAt))}</dd></div><div class="kv-row"><dt>最新错误</dt><dd>${escapeHtml(scheduler.collector.lastError || "无")}</dd></div><div class="kv-row"><dt>数据文件</dt><dd>${escapeHtml(state.bootstrap.counts.snapshots)} 份快照 · ${escapeHtml(state.bootstrap.counts.settlements)} 周结算</dd></div></dl></section><section class="system-block"><div class="section-header"><h2>竞技场配置</h2></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>竞技场</th><th>协议类型</th><th>战区数</th><th>周四截止</th><th>周五更新</th></tr></thead><tbody>${config.arenas.map((arena) => `<tr><td>${escapeHtml(arena.name)}</td><td>${arena.protocolType}</td><td>${arena.zones.length}</td><td>${escapeHtml(arena.settlementTime)}</td><td>${escapeHtml(arena.rankingUpdateTime)}</td></tr>`).join("")}</tbody></table></div></section><section class="system-block"><div class="section-header"><h2>赛季</h2></div>${seasonEditor}<div class="data-table-wrap" style="margin-top:12px"><table class="data-table"><thead><tr><th>赛季</th><th>开始</th><th>结束/计划</th><th>状态</th><th></th></tr></thead><tbody>${seasonRows}</tbody></table></div></section></div><div><section class="system-block"><div class="section-header"><h2>管理密码</h2><span class="status-badge${state.adminVerified ? " is-final" : config.adminProtected ? " is-partial" : " is-missing"}">${escapeHtml(adminStatus)}</span></div><div class="inline-form"><label class="form-field" style="flex:1"><span>管理密码</span><input class="text-input" id="admin-token" type="password" value="${escapeHtml(adminToken())}" autocomplete="current-password" ${config.adminProtected ? "" : "disabled"}></label><button class="secondary-button" type="button" data-action="save-token"${config.adminProtected ? "" : " disabled"}>验证并解锁</button></div><p class="admin-help">密码只保存在当前浏览器会话；未验证时只能查看数据，不能创建档案、修改备注或补录记录。</p></section><section class="system-block"><div class="section-header"><h2>运行事件</h2></div><div class="event-list">${events.length ? events.map((event) => `<div class="event-row"><span class="event-time">${escapeHtml(dateTime(event.createdAt))}</span><span class="event-scope">${escapeHtml(event.scope)}</span><span class="event-message">${escapeHtml(event.message)}</span></div>`).join("") : `<div class="empty-state">暂无事件</div>`}</div></section></div></div>`;
+  const seasonRows = seasons.map((season) => `<tr><td><strong>${escapeHtml(season.label)}</strong><span class="player-id">编号 ${escapeHtml(season.id)}</span></td><td>${escapeHtml(dateTime(season.startsAt))}</td><td>${escapeHtml(dateTime(season.endsAt))}${season.plannedWeeks ? ` · ${number(season.plannedWeeks)} 周` : season.endsAt ? "" : " · 未设结束"}</td><td><span class="status-badge${season.active ? " is-final" : ""}">${season.active ? "当前届次" : "历史届次"}</span></td><td>${adminUnlocked() ? `<span class="action-row">${!season.active ? `<button class="secondary-button" type="button" data-activate-season="${escapeHtml(season.id)}">设为当前届次</button>` : ""}<button class="secondary-button" type="button" data-edit-season="${escapeHtml(season.id)}">编辑</button></span>` : ""}</td></tr>`).join("");
+  $("#system-content").innerHTML = `<div class="system-grid"><div><section class="system-block"><div class="section-header"><h2>采集状态</h2>${collectButton}</div><dl class="kv-list"><div class="kv-row"><dt>采集器</dt><dd>${escapeHtml(scheduler.credentialsConfigured ? scheduler.collector.phase : "未配置账号")}</dd></div><div class="kv-row"><dt>最近成功</dt><dd>${escapeHtml(dateTime(scheduler.collector.lastSuccessAt))}</dd></div><div class="kv-row"><dt>下次计划</dt><dd>${escapeHtml(dateTime(scheduler.nextPollAt))}</dd></div><div class="kv-row"><dt>最新错误</dt><dd>${escapeHtml(scheduler.collector.lastError || "无")}</dd></div><div class="kv-row"><dt>数据文件</dt><dd>${escapeHtml(state.bootstrap.counts.snapshots)} 份快照 · ${escapeHtml(state.bootstrap.counts.settlements)} 周结算</dd></div></dl></section><section class="system-block"><div class="section-header"><h2>竞技场配置</h2></div><div class="data-table-wrap"><table class="data-table"><thead><tr><th>竞技场</th><th>协议类型</th><th>战区数</th><th>周四截止</th><th>周五更新</th></tr></thead><tbody>${config.arenas.map((arena) => `<tr><td>${escapeHtml(arena.name)}</td><td>${arena.protocolType}</td><td>${arena.zones.length}</td><td>${escapeHtml(arena.settlementTime)}</td><td>${escapeHtml(arena.rankingUpdateTime)}</td></tr>`).join("")}</tbody></table></div></section><section class="system-block"><div class="section-header"><div><h2>竞技场届次管理</h2><p>控制每周榜单归属和连皇重新起算的边界</p></div></div><div class="season-guidance"><span class="season-guidance-mark">届</span><div><strong>经典竞技场与传奇竞技场共用同一届次</strong><span>名人堂没有独立届次，只会汇总这里已经建立的竞技场届次。系统不会自动识别换届。</span></div></div>${seasonEditor}<div class="data-table-wrap season-table-wrap"><table class="data-table season-table"><thead><tr><th>竞技场届次</th><th>开始时间</th><th>结束时间 / 计划</th><th>状态</th><th>操作</th></tr></thead><tbody>${seasonRows}</tbody></table></div></section></div><div><section class="system-block"><div class="section-header"><h2>管理密码</h2><span class="status-badge${state.adminVerified ? " is-final" : config.adminProtected ? " is-partial" : " is-missing"}">${escapeHtml(adminStatus)}</span></div><div class="inline-form"><label class="form-field" style="flex:1"><span>管理密码</span><input class="text-input" id="admin-token" type="password" value="${escapeHtml(adminToken())}" autocomplete="current-password" ${config.adminProtected ? "" : "disabled"}></label><button class="secondary-button" type="button" data-action="save-token"${config.adminProtected ? "" : " disabled"}>验证并解锁</button></div><p class="admin-help">密码只保存在当前浏览器会话；未验证时只能查看数据，不能创建档案、修改备注或补录记录。</p></section><section class="system-block"><div class="section-header"><h2>运行事件</h2></div><div class="event-list">${events.length ? events.map((event) => `<div class="event-row"><span class="event-time">${escapeHtml(dateTime(event.createdAt))}</span><span class="event-scope">${escapeHtml(event.scope)}</span><span class="event-message">${escapeHtml(event.message)}</span></div>`).join("") : `<div class="empty-state">暂无事件</div>`}</div></section></div></div>`;
 }
 
 async function selectPlayer(playerId) {
@@ -1438,7 +1440,7 @@ document.addEventListener("click", (event) => {
     void (async () => {
       try {
         await api(`/api/admin/seasons/${encodeURIComponent(activate.dataset.activateSeason)}/activate`, { method: "POST", body: "{}" });
-        showToast("当前赛季已切换");
+        showToast("当前竞技场届次已切换");
         state.seasonId = activate.dataset.activateSeason;
         resetBackfillEditor();
         resetBackfillMatrix();
@@ -1590,12 +1592,14 @@ document.addEventListener("keydown", (event) => {
 });
 
 document.addEventListener("submit", (event) => {
-  if (event.target.id === "access-form") {
+  const submittedForm = event.target;
+  const formId = formElementId(submittedForm);
+  if (formId === "access-form") {
     event.preventDefault();
     void submitAccessForm();
     return;
   }
-  if (event.target.id === "new-player-form") {
+  if (formId === "new-player-form") {
     event.preventDefault();
     const form = new FormData(event.target);
     const button = event.target.querySelector("button[type='submit']");
@@ -1622,7 +1626,7 @@ document.addEventListener("submit", (event) => {
     })();
     return;
   }
-  if (event.target.id === "identity-label-form") {
+  if (formId === "identity-label-form") {
     event.preventDefault();
     const form = new FormData(event.target);
     const playerId = event.target.dataset.playerId;
@@ -1648,10 +1652,10 @@ document.addEventListener("submit", (event) => {
     })();
     return;
   }
-  if (event.target.id !== "season-form") return;
+  if (formId !== "season-form") return;
   event.preventDefault();
   void (async () => {
-    const form = new FormData(event.target);
+    const form = new FormData(submittedForm);
     try {
       await api("/api/admin/seasons", {
         method: "POST",
@@ -1664,9 +1668,9 @@ document.addEventListener("submit", (event) => {
           active: false
         })
       });
-      showToast("赛季已保存");
+      showToast("竞技场届次已保存");
       state.seasonEditingId = null;
-      event.target.reset();
+      submittedForm.reset();
       await loadBootstrap({ quiet: true });
     } catch (error) {
       showToast(error.message, true);
